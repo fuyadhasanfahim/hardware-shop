@@ -215,7 +215,7 @@ async function run() {
         });
 
         // Initialize Cron Job
-        setupDailySummaryCron(database);
+        setupDailySummaryCron(database, debtDB);
 
         app.post("/logOut", async (req, res) => {
             res.clearCookie("token", { maxAge: 0 }).send({ success: true });

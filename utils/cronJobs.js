@@ -6,7 +6,7 @@ const sendSMS = require("./sendSMS");
  * Sets up a daily summary cron job to send SMS summary to partners.
  * @param {import('mongodb').Db} db - The MongoDB database instance.
  */
-const setupDailySummaryCron = (db) => {
+const setupDailySummaryCron = (db, debtDB) => {
     const time = process.env.TIME || "23:59";
     const [hour, minute] = time.split(":");
     const cronTime = `${minute} ${hour} * * *`;
@@ -40,6 +40,10 @@ const setupDailySummaryCron = (db) => {
             const transactionCollections = db.collection("transactionList");
             const mainBalanceCollections = db.collection("mainBalanceList");
             const dailySummaryCollections = db.collection("dailySummaryList");
+
+            // helper for external DB collection if present
+            const allDebtTransactions = debtDB ? debtDB.collection("transactionList") : null;
+            const allLendTransactions = debtDB ? debtDB.collection("lenderTransactionList") : null;
 
             // Helper to ensure numeric values
             const toNum = (val) => Number(val || 0);
@@ -122,31 +126,55 @@ const setupDailySummaryCron = (db) => {
                 date: dbDate,
             });
             const totalProfit = toNum(dailySummaryDoc?.totalProfit);
+            
+            // 7.5. Debit IN and OUT
+            let totalDebitIn = 0;
+            let totalDebitOut = 0;
+            
+            if (allDebtTransactions && allLendTransactions) {
+                const todayDebts = await allDebtTransactions.find({ date: dbDate }).toArray();
+                const todayLends = await allLendTransactions.find({ date: dbDate }).toArray();
+                
+                totalDebitIn = todayDebts.filter(t => t.type === "IN").reduce((acc, t) => acc + toNum(t.rcvAmount || t.balance), 0) 
+                             + todayLends.filter(t => t.type === "IN").reduce((acc, t) => acc + toNum(t.rcvAmount || t.balance), 0);
+                             
+                totalDebitOut = todayDebts.filter(t => t.type === "OUT").reduce((acc, t) => acc + toNum(t.rcvAmount || t.balance), 0)
+                              + todayLends.filter(t => t.type === "OUT").reduce((acc, t) => acc + toNum(t.rcvAmount || t.balance), 0);
+            }
 
             // 8. Today Balance Calculation
-            // Formula: (Cash Sales + Due Collection) - (Cash Purchase + Due Given + Expense)
+            // Formula: (Cash Sales + Due Collection + Debit IN) - (Cash Purchase + Due Given + Expense + Debit OUT)
             const todayBalance =
                 totalCashSales +
-                totalDueCollection -
-                (totalCashPurchase + totalDueGiven + totalExpense);
+                totalDueCollection + 
+                totalDebitIn -
+                (totalCashPurchase + totalDueGiven + totalExpense + totalDebitOut);
 
-            const totalBalance = balance + todayBalance;
+            const openingBalance = balance - todayBalance;
 
             const message = `Mojumdar Hath Treders
-Daily Summary - ${displayDate}:
-Balance: ${balance.toFixed(2)}
-Total Sell: ${totalSales.toFixed(2)}
-Cash: ${totalCashSales.toFixed(2)}
-Due Sale: ${totalDueSale.toFixed(2)}
+Report: ${displayDate}
+
+Opening Balance: ${openingBalance.toFixed(2)}
+
+--- CASH IN ---
+Total Sales: ${totalSales.toFixed(2)}
+ - Cash Sales: ${totalCashSales.toFixed(2)}
+ - Due Sales: ${totalDueSale.toFixed(2)}
 Due Collection: ${totalDueCollection.toFixed(2)}
+Loan Rcvd (In): ${totalDebitIn.toFixed(2)}
 
-Cash on purchase: ${totalCashPurchase.toFixed(2)}
-Due Given: ${totalDueGiven.toFixed(2)}
-Expense: ${totalExpense.toFixed(2)}
-Profit: ${totalProfit.toFixed(2)}
+--- CASH OUT ---
+Cash Purchase: ${totalCashPurchase.toFixed(2)}
+Supplier Paid: ${totalDueGiven.toFixed(2)}
+Daily Expense: ${totalExpense.toFixed(2)}
+Loan Given (Out): ${totalDebitOut.toFixed(2)}
 
-Today balance: ${todayBalance.toFixed(2)} taka
-Total Balance: ${totalBalance.toFixed(2)} taka`;
+--- OVERVIEW ---
+Net Profit: ${totalProfit.toFixed(2)}
+Today Net Cash: ${todayBalance.toFixed(2)}
+
+Closing Balance: ${balance.toFixed(2)}`;
 
             // 9. Send Batch SMS (One to Many)
             const response = await sendSMS({ number: partners, message });

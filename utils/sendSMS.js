@@ -12,6 +12,7 @@ const sendSMS = async ({ number, message }) => {
     const numbersArray = Array.isArray(number) ? number : number.split(",");
     const cleanNumbers = numbersArray
         .map((n) => n.trim().replace(/\D/g, "")) // Remove non-digit characters
+        .map((n) => (n.startsWith("01") ? "88" + n : n)) // Format BD local numbers to include 880 prefix
         .filter((n) => n.length >= 10) // Basic validation for BD numbers
         .join(",");
 
