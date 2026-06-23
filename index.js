@@ -1168,42 +1168,41 @@ async function run() {
             try {
                 const todaysDate = moment(new Date()).format("DD.MM.YYYY");
 
-                // Fetch sales invoices for today's date
-                const salesInvoices = await salesInvoiceCollections
-                    .find({ date: todaysDate })
-                    .toArray();
-                const totalSales = salesInvoices
-                    .reduce((acc, sale) => acc + sale.grandTotal, 0)
-                    .toFixed(2);
-                const totalDue = salesInvoices
-                    .reduce((acc, sale) => acc + sale.dueAmount, 0)
-                    .toFixed(2);
-                const totalCashSales = salesInvoices
-                    .reduce((acc, sale) => acc + sale.finalPayAmount, 0)
-                    .toFixed(2);
+                // 1. Sales Invoices
+                const salesAgg = await salesInvoiceCollections.aggregate([
+                    { $match: { date: todaysDate } },
+                    { 
+                        $group: { 
+                            _id: null, 
+                            totalSales: { $sum: "$grandTotal" },
+                            totalDue: { $sum: "$dueAmount" },
+                            totalCashSales: { $sum: "$finalPayAmount" }
+                        } 
+                    }
+                ]).toArray();
 
-                // Calculate total amount collected from due (paid by customers today) in sales
-                const salesDueCollections = await customerDueCollections
-                    .find()
-                    .toArray();
-                const totalCollectedDueFromSales = salesDueCollections
-                    .reduce((acc, sale) => {
-                        const todaysPayments = sale.paymentHistory
-                            ? sale.paymentHistory
-                                  .filter(
-                                      (payment) =>
-                                          payment.date === todaysDate &&
-                                          payment.paymentMethod != "Return",
-                                  )
-                                  .reduce(
-                                      (sum, payment) =>
-                                          sum + payment.paidAmount,
-                                      0,
-                                  )
-                            : 0;
-                        return acc + todaysPayments;
-                    }, 0)
-                    .toFixed(2);
+                const totalSales = salesAgg.length > 0 ? salesAgg[0].totalSales.toFixed(2) : "0.00";
+                const totalDue = salesAgg.length > 0 ? salesAgg[0].totalDue.toFixed(2) : "0.00";
+                const totalCashSales = salesAgg.length > 0 ? salesAgg[0].totalCashSales.toFixed(2) : "0.00";
+
+                // 2. Customer Due Collections (Sales Due Collections)
+                const salesDueAgg = await customerDueCollections.aggregate([
+                    { $unwind: "$paymentHistory" },
+                    { 
+                        $match: { 
+                            "paymentHistory.date": todaysDate,
+                            "paymentHistory.paymentMethod": { $ne: "Return" }
+                        } 
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            totalCollected: { $sum: "$paymentHistory.paidAmount" }
+                        }
+                    }
+                ]).toArray();
+
+                const totalCollectedDueFromSales = salesDueAgg.length > 0 ? salesDueAgg[0].totalCollected.toFixed(2) : "0.00";
 
                 const saleSummary = {
                     totalSales,
@@ -1212,42 +1211,41 @@ async function run() {
                     totalCollectedDueFromSales,
                 };
 
-                // Fetch purchase invoices for today's date
-                const purchaseInvoices = await purchaseInvoiceCollections
-                    .find({ date: todaysDate })
-                    .toArray();
-                const totalPurchase = purchaseInvoices
-                    .reduce((acc, purchase) => acc + purchase.grandTotal, 0)
-                    .toFixed(2);
-                const totalPurchaseDue = purchaseInvoices
-                    .reduce((acc, purchase) => acc + purchase.dueAmount, 0)
-                    .toFixed(2);
-                const totalCashPurchase = purchaseInvoices
-                    .reduce((acc, purchase) => acc + purchase.finalPayAmount, 0)
-                    .toFixed(2);
+                // 3. Purchase Invoices
+                const purchaseAgg = await purchaseInvoiceCollections.aggregate([
+                    { $match: { date: todaysDate } },
+                    { 
+                        $group: { 
+                            _id: null, 
+                            totalPurchase: { $sum: "$grandTotal" },
+                            totalPurchaseDue: { $sum: "$dueAmount" },
+                            totalCashPurchase: { $sum: "$finalPayAmount" }
+                        } 
+                    }
+                ]).toArray();
 
-                // Calculate total amount collected from due (paid by you today) in purchases
-                const purchaseDueCollections = await supplierDueCollections
-                    .find()
-                    .toArray();
-                const totalCollectedDueFromPurchases = purchaseDueCollections
-                    .reduce((acc, purchase) => {
-                        const todaysPayments = purchase.paymentHistory
-                            ? purchase.paymentHistory
-                                  .filter(
-                                      (payment) =>
-                                          payment.date === todaysDate &&
-                                          payment.paymentMethod != "Return",
-                                  )
-                                  .reduce(
-                                      (sum, payment) =>
-                                          sum + payment.paidAmount,
-                                      0,
-                                  )
-                            : 0;
-                        return acc + todaysPayments;
-                    }, 0)
-                    .toFixed(2);
+                const totalPurchase = purchaseAgg.length > 0 ? purchaseAgg[0].totalPurchase.toFixed(2) : "0.00";
+                const totalPurchaseDue = purchaseAgg.length > 0 ? purchaseAgg[0].totalPurchaseDue.toFixed(2) : "0.00";
+                const totalCashPurchase = purchaseAgg.length > 0 ? purchaseAgg[0].totalCashPurchase.toFixed(2) : "0.00";
+
+                // 4. Supplier Due Collections (Purchase Due Collections)
+                const purchaseDueAgg = await supplierDueCollections.aggregate([
+                    { $unwind: "$paymentHistory" },
+                    { 
+                        $match: { 
+                            "paymentHistory.date": todaysDate,
+                            "paymentHistory.paymentMethod": { $ne: "Return" }
+                        } 
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            totalCollected: { $sum: "$paymentHistory.paidAmount" }
+                        }
+                    }
+                ]).toArray();
+
+                const totalCollectedDueFromPurchases = purchaseDueAgg.length > 0 ? purchaseDueAgg[0].totalCollected.toFixed(2) : "0.00";
 
                 const purchaseSummary = {
                     totalPurchase,
@@ -1256,15 +1254,18 @@ async function run() {
                     totalCollectedDueFromPurchases,
                 };
 
-                const transactions = await transactionCollections
-                    .find({
-                        $and: [{ date: todaysDate }, { type: "Cost" }],
-                    })
-                    .toArray();
+                // 5. Transactions (Expenses)
+                const expenseAgg = await transactionCollections.aggregate([
+                    { $match: { date: todaysDate, type: "Cost" } },
+                    {
+                        $group: {
+                            _id: null,
+                            todaysCost: { $sum: "$totalBalance" }
+                        }
+                    }
+                ]).toArray();
 
-                const todaysCost = transactions
-                    .reduce((acc, trans) => acc + trans.totalBalance, 0)
-                    .toFixed(2);
+                const todaysCost = expenseAgg.length > 0 ? expenseAgg[0].todaysCost.toFixed(2) : "0.00";
                 const expenseSummary = { todaysCost };
 
                 // Send the calculated data back to the client
