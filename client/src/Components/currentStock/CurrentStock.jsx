@@ -202,13 +202,18 @@ const CurrentStock = () => {
     const formattedData = downloadStock.map((stk) => ({
       "Product ID": stk.productID,
       "Product Name": stk.productTitle,
-      Quantity: stk.purchaseQuantity,
-      "Norm's": stk.reOrderQuantity,
-      Price: stk.salesPrice,
+      Quantity: parseFloat(stk.purchaseQuantity || 0).toFixed(2),
       Unit: stk.purchaseUnit,
-      Brand: stk.brand,
+      "Purchase Price": parseFloat(stk.purchasePrice || 0).toFixed(2),
+      "Sales Price": parseFloat(stk.salesPrice || 0).toFixed(2),
+      "Total Value": (
+        parseFloat(stk.purchaseQuantity || 0) *
+        parseFloat(stk.purchasePrice || 0)
+      ).toFixed(2),
       Category: stk.category,
+      Brand: stk.brand,
       Storage: stk.storage,
+      "Min Stock (Norms)": parseFloat(stk.reOrderQuantity || 0).toFixed(2),
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
@@ -218,15 +223,21 @@ const CurrentStock = () => {
   };
   // ...................................................................
   const downloadPDF = () => {
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
 
     const tableColumn = [
       "Product ID",
       "Product Name",
       "Quantity",
       "Unit",
-      "Norm's",
-      "Price",
+      "Purchase Price",
+      "Sales Price",
+      "Total Value",
+      "Storage",
     ];
     const tableRows = [];
 
@@ -234,26 +245,32 @@ const CurrentStock = () => {
       const stockData = [
         stk.productID,
         stk.productTitle,
-        parseFloat(stk.purchaseQuantity).toFixed(2),
+        parseFloat(stk.purchaseQuantity || 0).toFixed(2),
         stk.purchaseUnit,
-        parseFloat(stk.reOrderQuantity).toFixed(2),
-        parseFloat(stk.salesPrice).toFixed(2),
+        parseFloat(stk.purchasePrice || 0).toFixed(2),
+        parseFloat(stk.salesPrice || 0).toFixed(2),
+        (
+          parseFloat(stk.purchaseQuantity || 0) *
+          parseFloat(stk.purchasePrice || 0)
+        ).toFixed(2),
+        stk.storage,
       ];
       tableRows.push(stockData);
     });
 
-    doc.text("Stock Balance", 14, 15);
+    doc.text("Current Stock Balance Report", 14, 15);
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
+      styles: { fontSize: 8 },
     });
     doc.save("stocks.pdf");
   };
   // ...................................................................
 
   return (
-    <div>
+    <div className="px-4">
       <div className="mt-5 pb-5">
         <div className="flex items-center justify-between">
           <div className="flex gap-2 items-center">

@@ -115,12 +115,16 @@ const ConfirmedStock = () => {
     const formattedData = downloadList.map((item) => ({
       "Product ID": item.productID,
       "Product Name": item.productTitle,
-      "Counted Qty": item.countedQuantity,
-      "System Qty": item.systemQuantity,
-      Variance: item.differenceQuantity,
+      "Counted Qty": parseFloat(item.countedQuantity || 0).toFixed(2),
+      "System Qty": parseFloat(item.systemQuantity || 0).toFixed(2),
+      Variance: parseFloat(item.differenceQuantity || 0).toFixed(2),
       Unit: item.purchaseUnit,
-      "Purchase Price": item.purchasePrice,
-      "Total Value": (item.countedQuantity * item.purchasePrice).toFixed(2),
+      "Purchase Price": parseFloat(item.purchasePrice || 0).toFixed(2),
+      "Sales Price": parseFloat(item.salesPrice || 0).toFixed(2),
+      "Total Value": (
+        parseFloat(item.countedQuantity || 0) *
+        parseFloat(item.purchasePrice || 0)
+      ).toFixed(2),
       Category: item.category,
       Brand: item.brand,
       Storage: item.storage,
@@ -136,7 +140,11 @@ const ConfirmedStock = () => {
 
   // PDF Export
   const downloadPDF = () => {
-    const doc = new jsPDF("landscape");
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
 
     const tableColumn = [
       "Product ID",
@@ -144,7 +152,8 @@ const ConfirmedStock = () => {
       "Counted",
       "System",
       "Unit",
-      "Price",
+      "Purchase Price",
+      "Sales Price",
       "Total Value",
       "Storage",
       "Confirmed At",
@@ -156,23 +165,28 @@ const ConfirmedStock = () => {
       const rowData = [
         item.productID,
         item.productTitle,
-        parseFloat(item.countedQuantity).toFixed(2),
-        parseFloat(item.systemQuantity).toFixed(2),
+        parseFloat(item.countedQuantity || 0).toFixed(2),
+        parseFloat(item.systemQuantity || 0).toFixed(2),
         item.purchaseUnit,
-        `৳${parseFloat(item.purchasePrice).toFixed(2)}`,
-        `৳${(item.countedQuantity * item.purchasePrice).toFixed(2)}`,
+        parseFloat(item.purchasePrice || 0).toFixed(2),
+        parseFloat(item.salesPrice || 0).toFixed(2),
+        (
+          parseFloat(item.countedQuantity || 0) *
+          parseFloat(item.purchasePrice || 0)
+        ).toFixed(2),
         item.storage,
-        moment(item.confirmedAt).format("DD/MM/YY"),
+        moment(item.confirmedAt).format("DD/MM/YY hh:mm A"),
         item.confirmedBy,
       ];
       tableRows.push(rowData);
     });
 
-    doc.text("Confirmed Stock List", 14, 15);
+    doc.text("Confirmed Stock List Report", 14, 15);
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
+      styles: { fontSize: 8 },
     });
     doc.save("confirmed_stock.pdf");
   };
@@ -241,7 +255,7 @@ const ConfirmedStock = () => {
   };
 
   return (
-    <div>
+    <div className="px-4">
       {/* Header */}
       <div className="mt-5 pb-5">
         <div className="flex items-center justify-between">

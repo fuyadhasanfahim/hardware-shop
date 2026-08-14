@@ -163,12 +163,18 @@ const RecheckStock = () => {
     const formattedData = downloadList.map((item) => ({
       "Product ID": item.productID,
       "Product Name": item.productTitle,
-      Quantity: item.purchaseQuantity,
+      Quantity: parseFloat(item.purchaseQuantity || 0).toFixed(2),
       Unit: item.purchaseUnit,
+      "Purchase Price": parseFloat(item.purchasePrice || 0).toFixed(2),
+      "Sales Price": parseFloat(item.salesPrice || 0).toFixed(2),
+      "Total Value": (
+        parseFloat(item.purchaseQuantity || 0) *
+        parseFloat(item.purchasePrice || 0)
+      ).toFixed(2),
       Category: item.category,
       Brand: item.brand,
-      Price: item.purchasePrice,
       Storage: item.storage,
+      "Min Stock (Norms)": parseFloat(item.reOrderQuantity || 0).toFixed(2),
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(formattedData);
@@ -179,13 +185,19 @@ const RecheckStock = () => {
 
   // PDF Export
   const downloadPDF = () => {
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
     const tableColumn = [
       "Product ID",
       "Product Name",
       "Quantity",
       "Unit",
-      "Price",
+      "Purchase Price",
+      "Sales Price",
+      "Total Value",
       "Storage",
     ];
     const tableRows = [];
@@ -194,19 +206,25 @@ const RecheckStock = () => {
       const rowData = [
         item.productID,
         item.productTitle,
-        parseFloat(item.purchaseQuantity).toFixed(2),
+        parseFloat(item.purchaseQuantity || 0).toFixed(2),
         item.purchaseUnit,
-        parseFloat(item.purchasePrice).toFixed(2),
+        parseFloat(item.purchasePrice || 0).toFixed(2),
+        parseFloat(item.salesPrice || 0).toFixed(2),
+        (
+          parseFloat(item.purchaseQuantity || 0) *
+          parseFloat(item.purchasePrice || 0)
+        ).toFixed(2),
         item.storage,
       ];
       tableRows.push(rowData);
     });
 
-    doc.text("Recheck Stock List", 14, 15);
+    doc.text("Recheck Stock List Report", 14, 15);
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
+      styles: { fontSize: 8 },
     });
     doc.save("recheck_stock.pdf");
   };
@@ -275,7 +293,7 @@ const RecheckStock = () => {
   };
 
   return (
-    <div>
+    <div className="px-4">
       {/* Header */}
       <div className="mt-5 pb-5">
         <div className="flex items-center justify-between">
