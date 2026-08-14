@@ -34,7 +34,8 @@ const Login = () => {
         const emailData = { email: user.email };
 
         // Request JWT token
-        return axios.post('http://localhost:9000/jwt', emailData)
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:9000';
+        return axios.post(`${apiUrl}/jwt`, emailData)
           .then((res) => {
             if (res.data.token) {
               localStorage.setItem('jwtToken', res.data.token); // Store token in localStorage

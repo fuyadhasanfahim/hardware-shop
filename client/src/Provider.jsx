@@ -59,8 +59,9 @@ const Provider = ({ children }) => {
     const token = localStorage.getItem("jwtToken");
     if (token) {
       try {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:9000';
         const response = await axios.post(
-          "http://localhost:9000/validate-token",
+          `${apiUrl}/validate-token`,
           { token },
           { headers: { Authorization: `Bearer ${token}` } }
         );

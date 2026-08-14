@@ -12,22 +12,29 @@ const createStockAuditRouter = require("./modules/stockAudit/stockAudit.routes")
 
 const app = express();
 
-const allowedOrigins = [
+const defaultOrigins = [
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:3000",
     "http://127.0.0.1:5173",
     "https://store.mozumdarhat.com",
+    "https://stock.mozumdarhat.com",
 ];
+
+const envOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean)
+    : [];
+
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
 app.use(
     cors({
         origin: function (origin, callback) {
             // Allow requests with no origin (like mobile apps, curl, server-to-server)
-            if (!origin || allowedOrigins.includes(origin)) {
+            if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
                 callback(null, true);
             } else {
-                callback(null, true); // Alternatively allow dynamically or handle restricted
+                callback(new Error(`CORS blocked for origin: ${origin}`));
             }
         },
         credentials: true,
