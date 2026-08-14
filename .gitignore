@@ -1,4 +1,86 @@
+# ==========================================
+# Root .gitignore for Hardware Store OMS
+# ==========================================
+
+# Dependencies
 node_modules/
+*/node_modules/
+.pnpm-store/
+.npm
+.yarn/
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Environment Variables & Secrets
 .env
-.vercel
+.env.*
+!.env.example
+*.env
+client/.env
+client/.env.local
+client/.env.*.local
+server/.env
+server/.env.*
+*.pem
+*.key
+*.cert
+
+# Production & Build Outputs
+dist/
+dist-ssr/
+build/
+out/
+client/dist/
+client/dist-ssr/
+*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Database Backups & Temporary Storage
 backups/
+server/backups/
+*.dump
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+tmp/
+temp/
+.cache/
+
+# Deployment & Hosting
+.vercel
+.serverless/
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+
+# IDE, Editor & OS Files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swo
+*.swp
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
