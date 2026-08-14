@@ -21,7 +21,7 @@ const Protected = ({ children }) => {
   }
 
   // If user is not logged in, redirect to login page
-  return <Navigate state={{ from: location }} to="/login" />;
+  return <Navigate state={{ from: location }} to="/login" replace />;
 };
 
 export default Protected;

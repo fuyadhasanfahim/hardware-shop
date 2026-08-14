@@ -8,7 +8,6 @@ import {
 } from "firebase/auth";
 import auth from "./firebase.config";
 import axios from "axios";
-import useAxiosProtect from "./Components/hooks/useAxiosProtect";
 
 export const ContextData = createContext(null);
 
@@ -38,27 +37,35 @@ const Provider = ({ children }) => {
   const [searchCustomer, setSearchCustomer] = useState("");
   const [tokenReady, setTokenReady] = useState(false);
 
-  const axiosProtect = useAxiosProtect();
-
   let userName;
-  user?.email === "asad4design@gmail.com"
-    ? (userName = "ASAD1010")
-    : user?.email === "mozumdarhattraders@gmail.com"
-    ? (userName = "ARIF2020")
-    : user?.email === "shop@mail.com"
-    ? (userName = "DEMO")
-    : user?.email === "gooogle.sarwar@mail.com"
-    ? (userName = "DEVELOPER")
-    : null;
+  if (user?.email === "asad4design@gmail.com") {
+    userName = "ASAD1010";
+  } else if (user?.email === "mozumdarhattraders@gmail.com") {
+    userName = "ARIF2020";
+  } else if (user?.email === "shop@mail.com") {
+    userName = "DEMO";
+  } else if (user?.email === "gooogle.sarwar@mail.com") {
+    userName = "DEVELOPER";
+  } else if (user?.displayName) {
+    userName = user.displayName;
+  } else if (user?.email) {
+    userName = user.email.split("@")[0].toUpperCase();
+  } else {
+    userName = "ADMIN";
+  }
 
   // Token validation logic
   const validateToken = async () => {
     const token = localStorage.getItem("jwtToken");
     if (token) {
       try {
-        const response = await axios.post("http://localhost:9000/validate-token", { token });
+        const response = await axios.post(
+          "http://localhost:9000/validate-token",
+          { token },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         if (response.data.success) {
-          setUser(response.data.user); // Set user if token is valid
+          setUser((prev) => prev || response.data.user); // Set user if token is valid
           setTokenReady(true);
         } else {
           localStorage.removeItem("jwtToken");
@@ -155,6 +162,10 @@ const Provider = ({ children }) => {
         setProducts(data.data.products);
         setProductCount(data.data.count);
         setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching products:", err);
+        setLoading(false);
       });
   }, [reFetch, currentPage, itemsPerPage, searchTerm, axiosSecure]);
 
@@ -249,6 +260,7 @@ const Provider = ({ children }) => {
     products,
     allProducts,
     loading,
+    setLoading,
     setReFetch,
     reFetch,
     supplier,

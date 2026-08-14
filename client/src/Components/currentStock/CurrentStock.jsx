@@ -1,5 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { CiSearch } from "react-icons/ci";
+import { MdOutlineEdit } from "react-icons/md";
+import Swal from "sweetalert2";
 import { ContextData } from "../../Provider";
 import useAxiosProtect from "../hooks/useAxiosProtect";
 import excel from "../../assets/images/excel.png";
@@ -24,6 +26,7 @@ const CurrentStock = () => {
     setStock,
     setCount,
     reFetch,
+    setReFetch,
   } = useContext(ContextData);
 
   const [downloadStock, setDownloadStock] = useState([]);
@@ -81,6 +84,50 @@ const CurrentStock = () => {
   const handleInputChange = (event) => {
     setSearchStock(event.target.value);
     setCurrentPage(1); // reset to first page on new search
+  };
+
+  // Update stock handler
+  const handleUpdateStock = (e, id) => {
+    e.preventDefault();
+    const form = e.target;
+    const updateQuantity = form.update_quantity.value;
+    const updatePrice = form.update_price.value;
+
+    const purchaseQuantity = parseFloat(updateQuantity);
+    const purchasePrice = parseFloat(updatePrice);
+
+    if (isNaN(purchaseQuantity) || isNaN(purchasePrice)) {
+      toast.error("Please provide valid quantity and price");
+      return;
+    }
+
+    const updateInfo = {
+      purchaseQuantity,
+      purchasePrice,
+    };
+
+    axiosProtect
+      .put(`/updateStock/${id}`, updateInfo)
+      .then((res) => {
+        if (res.status === 200) {
+          setReFetch(!reFetch);
+          const modal = document.querySelector(`#update_stock_${id}`);
+          if (modal) {
+            modal.close();
+          }
+          Swal.fire({
+            text: "Stock updated successfully",
+            icon: "success",
+          });
+        } else {
+          toast.error(res.data?.message || "Failed to update stock");
+        }
+      })
+      .catch((err) => {
+        toast.error(
+          err.response?.data?.message || "Server error while updating stock"
+        );
+      });
   };
 
   // ...................................................................
@@ -250,32 +297,124 @@ const CurrentStock = () => {
                   <th className="w-[8%]">Brand</th>
                   <th className="w-[5%]">Purchase Price</th>
                   <th className="w-[6%]">Storage</th>
+                  <th className="w-[5%] text-center">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {/* row 1 */}
                 {stock &&
-                  stock.map((stock) => (
+                  stock.map((stockItem) => (
                     <tr
-                      key={stock._id}
+                      key={stockItem._id}
                       className={`${
-                        stock.purchaseQuantity <= stock.reOrderQuantity
+                        stockItem.purchaseQuantity <= stockItem.reOrderQuantity
                           ? "bg-yellow-100"
                           : ""
                       }`}
                     >
-                      <td>{stock.productID}</td>
-                      <td>{stock.productTitle}</td>
+                      <td>{stockItem.productID}</td>
+                      <td>{stockItem.productTitle}</td>
                       <td className="text-center">
-                        {parseFloat(stock.purchaseQuantity).toFixed(2)}
+                        {parseFloat(stockItem.purchaseQuantity).toFixed(2)}
                       </td>
-                      <td>{stock.purchaseUnit}</td>
-                      <td className="text-center">{stock.category}</td>
-                      <td className="text-center">{stock.brand}</td>
+                      <td>{stockItem.purchaseUnit}</td>
+                      <td className="text-center">{stockItem.category}</td>
+                      <td className="text-center">{stockItem.brand}</td>
                       <td className="text-center">
-                        {parseFloat(stock.purchasePrice).toFixed(2)}
+                        {parseFloat(stockItem.purchasePrice).toFixed(2)}
                       </td>
-                      <td className="text-center">{stock.storage}</td>
+                      <td className="text-center">{stockItem.storage}</td>
+                      <td className="text-center">
+                        <div className="flex items-center justify-center text-xl">
+                          <button
+                            onClick={() =>
+                              document
+                                .getElementById(`update_stock_${stockItem._id}`)
+                                .showModal()
+                            }
+                            className="cursor-pointer hover:text-green-600 transition-colors"
+                            title="Edit Stock"
+                          >
+                            <MdOutlineEdit />
+                          </button>
+
+                          {/* Update Stock Modal */}
+                          <dialog
+                            id={`update_stock_${stockItem._id}`}
+                            className="modal text-left"
+                          >
+                            <div className="modal-box max-w-lg w-full relative p-6">
+                              <h3 className="font-bold text-lg mb-3 uppercase text-gray-800 pr-8">
+                                UPDATING: {stockItem.productTitle}
+                              </h3>
+                              <hr className="my-3 border-gray-200" />
+                              <form method="dialog">
+                                <button className="btn btn-sm btn-circle btn-ghost absolute right-3 top-3 text-white bg-red-400 hover:bg-red-500 border-none">
+                                  ✕
+                                </button>
+                              </form>
+                              <form
+                                onSubmit={(e) =>
+                                  handleUpdateStock(e, stockItem._id)
+                                }
+                                className="mt-5 space-y-4"
+                              >
+                                <div className="flex items-center justify-between gap-4">
+                                  <label className="font-bold text-gray-800 text-[15px] w-1/3">
+                                    Product ID
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={stockItem.productID}
+                                    readOnly
+                                    className="border border-gray-300 rounded-lg py-2 px-3 text-gray-700 outline-none w-2/3 bg-white font-medium"
+                                  />
+                                </div>
+                                <div className="flex items-center justify-between gap-4">
+                                  <label className="font-bold text-gray-800 text-[15px] w-1/3">
+                                    Update Quantity
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="any"
+                                    name="update_quantity"
+                                    defaultValue={stockItem.purchaseQuantity}
+                                    required
+                                    className="border border-gray-300 rounded-lg py-2 px-3 text-gray-700 outline-none w-2/3 focus:border-green-500"
+                                  />
+                                </div>
+                                <div className="flex items-center justify-between gap-4">
+                                  <label className="font-bold text-gray-800 text-[15px] w-1/3">
+                                    Update Price
+                                  </label>
+                                  <input
+                                    type="number"
+                                    step="any"
+                                    name="update_price"
+                                    defaultValue={stockItem.purchasePrice}
+                                    required
+                                    className="border border-gray-300 rounded-lg py-2 px-3 text-gray-700 outline-none w-2/3 focus:border-green-500"
+                                  />
+                                </div>
+                                <div className="flex justify-end gap-3 pt-3">
+                                  <button
+                                    type="reset"
+                                    className="bg-[#ffca28] hover:bg-yellow-400 text-gray-900 font-semibold py-2 px-6 rounded-lg transition-colors cursor-pointer text-[15px]"
+                                  >
+                                    Reset
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    className="bg-[#22c55e] hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors cursor-pointer text-[15px]"
+                                  >
+                                    Update
+                                  </button>
+                                </div>
+                              </form>
+                            </div>
+                          </dialog>
+                        </div>
+                      </td>
                     </tr>
                   ))}
               </tbody>

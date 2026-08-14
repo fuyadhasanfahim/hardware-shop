@@ -10,13 +10,14 @@ import DeviceRestriction from './Pages/DeviceRestriction'
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Provider>
-      <RouterProvider router={router}>
-        <DeviceRestriction>
-          <div className="poppins">
-            <RouterProvider router={router} />
-          </div>
-        </DeviceRestriction>
-      </RouterProvider>
+      <div className="poppins">
+        <RouterProvider
+          router={router}
+          future={{
+            v7_startTransition: true,
+          }}
+        />
+      </div>
     </Provider>
   </React.StrictMode>
 );

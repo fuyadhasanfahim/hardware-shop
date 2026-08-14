@@ -25,56 +25,65 @@ const Home = () => {
   const [customerDue, setCustomerDue] = useState([]);
   const [totalStock, setTotalStock] = useState(0);
 
-  const mBalance = mainBalance[0]?.mainBalance;
+  const mBalance = Array.isArray(mainBalance)
+    ? mainBalance[0]?.mainBalance
+    : (typeof mainBalance === "object" ? mainBalance?.mainBalance : mainBalance);
   const parseBalance = parseFloat(mBalance || 0);
   const currentBalance = parseFloat(parseBalance).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
-  // const totalStock = stock.reduce((acc, stock) => acc + stock.purchaseQuantity, 0);
-  // const totalStock = Array.isArray(stock)
-  //   ? stock.reduce((acc, item) => acc + item.purchaseQuantity, 0)
-  //   : 0;
-
-    useEffect(()=> {
-      axiosProtect.get('/supplierTotalDueBalance', {
-        params: {
-		      userEmail: user?.email,
-        },
-      })
-      .then(res => {
-        setSupplierDue(res.data);
-      }).catch(err => {
-        toast.error(err);
-      });
-    },[reFetch]);
-
-    useEffect(()=> {
-      axiosProtect.get('/customerTotalDueBalance', {
-        params: {
-		userEmail: user?.email,
-        },
-      })
-      .then(res => {
-        setCustomerDue(res.data);
-      }).catch(err => {
-        toast.error(err);
-      });
-    },[reFetch]);
-
-    // ............... get main balance
   useEffect(() => {
-    axiosProtect.get("/mainBalance", {
-      params: {
-        userEmail: user?.email,
-      },
-    })
-    .then((res) => {
-      setMainBalance(res.data);
-    });
-  }, [reFetch]);
+    if (!user?.email) return;
+    axiosProtect
+      .get('/supplierTotalDueBalance', {
+        params: {
+          userEmail: user?.email,
+        },
+      })
+      .then((res) => {
+        setSupplierDue(res.data || []);
+      })
+      .catch((err) => {
+        console.error("Error fetching supplier due:", err);
+      });
+  }, [reFetch, user?.email]);
+
+  useEffect(() => {
+    if (!user?.email) return;
+    axiosProtect
+      .get('/customerTotalDueBalance', {
+        params: {
+          userEmail: user?.email,
+        },
+      })
+      .then((res) => {
+        setCustomerDue(res.data || []);
+      })
+      .catch((err) => {
+        console.error("Error fetching customer due:", err);
+      });
+  }, [reFetch, user?.email]);
+
+  // ............... get main balance
+  useEffect(() => {
+    if (!user?.email) return;
+    axiosProtect
+      .get("/mainBalance", {
+        params: {
+          userEmail: user?.email,
+        },
+      })
+      .then((res) => {
+        setMainBalance(res.data || []);
+      })
+      .catch((err) => {
+        console.error("Error fetching main balance:", err);
+      });
+  }, [reFetch, user?.email]);
 
   // ......................
   // get stock balance
   useEffect(() => {
+    if (!user?.email) return;
     axiosProtect
       .get(`/stockBalance`, {
         params: {
@@ -85,14 +94,16 @@ const Home = () => {
         },
       })
       .then((res) => {
-        setStock(res.data.result);
-        setCount(res.data.count);
-        setTotalStock(res.data.totalStock); // Set total stock from response
+        if (res.data) {
+          setStock(res.data.result || []);
+          setCount(res.data.count || 0);
+          setTotalStock(res.data.totalStock || 0);
+        }
       })
       .catch((err) => {
-        toast.error(err);
+        console.error("Error fetching stock balance:", err);
       });
-  }, [reFetch, currentPage, itemsPerPage, searchStock]);
+  }, [reFetch, currentPage, itemsPerPage, searchStock, user?.email]);
 
   return (
     <div className="p-2">

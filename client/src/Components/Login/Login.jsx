@@ -10,56 +10,17 @@ import axios from "axios";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const { loginWithEmail, setUser } = useContext(ContextData);
+  const { loginWithEmail, setUser, setLoading, user, loading } = useContext(ContextData);
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/";
-
-  // useEffect(() => {
-  //   if (user) {
-  //     navigate("/");
-  //   }
-  // }, [user, navigate]);
+  const rawFrom = location.state?.from?.pathname;
+  const from = rawFrom && rawFrom !== "/login" ? rawFrom : "/";
 
   useEffect(() => {
-    if (localStorage.getItem('jwtToken')) {
-      navigate(from, { replace: true }); // Redirect if already logged in
+    if (!loading && user) {
+      navigate(from, { replace: true }); // Redirect if already authenticated
     }
-  }, [navigate, from]);
-
-
-  // const handleEmailLogin = (e) => {
-  //   e.preventDefault();
-
-  //   const email = e.target.email.value;
-  //   const password = e.target.password.value;
-
-  //   loginWithEmail(email, password)
-  //     .then((result) => {
-  //       // Signed in
-
-  //       navigate(from, { replace: true });
-  //       const user = result.user;
-  //       setUser(user);
-  //       Swal.fire({
-  //         title: "Login successfully",
-  //         icon: "success",
-  //       });
-
-  //       // navigate(location?.state ? location.state : "/");
-
-  //     })
-  //     .catch((error) => {
-  //       const errorCode = error.code;
-  //       const errorMessage = error.message;
-  //       Swal.fire({
-  //         title: errorCode,
-  //         text: errorMessage,
-  //         icon: "error",
-  //       });
-  //     });
-  // };
-
+  }, [user, loading, navigate, from]);
 
   const handleEmailLogin = (e) => {
     e.preventDefault();
@@ -78,6 +39,7 @@ const Login = () => {
             if (res.data.token) {
               localStorage.setItem('jwtToken', res.data.token); // Store token in localStorage
               setUser(user);
+              if (setLoading) setLoading(false);
               navigate(from, { replace: true }); // Redirect after login
               Swal.fire({
                 title: 'Login successful',
@@ -87,6 +49,7 @@ const Login = () => {
           });
       })
       .catch((error) => {
+        if (setLoading) setLoading(false);
         Swal.fire({
           title: 'Error',
           text: error.message,

@@ -10,9 +10,25 @@ const { format } = require("date-fns");
 const { setupDailySummaryCron } = require("./utils/cronJobs");
 
 const app = express();
+
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "https://store.mozumdarhat.com",
+];
+
 app.use(
     cors({
-        origin: ["https://store.mozumdarhat.com"],
+        origin: function (origin, callback) {
+            // Allow requests with no origin (like mobile apps, curl, server-to-server)
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(null, true); // Alternatively allow dynamically or handle restricted
+            }
+        },
         credentials: true,
     }),
 );
@@ -30,8 +46,6 @@ const sendSMS = require("./utils/sendSMS");
 
 // Office
 const uri = process.env.MONGO_URI;
-console.log("URI: ", uri);
-console.log("MONGO URI: ", process.env.MONGO_URI);
 
 if (!uri) {
     console.error(
@@ -91,12 +105,13 @@ app.post("/jwt", (req, res) => {
 
 // JWT token validation route
 app.post("/validate-token", (req, res) => {
-    const token = req.headers.authorization?.split(" ")[1]; // Extract token from 'Authorization' header
+    const authHeader = req.headers.authorization;
+    const token = (authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : authHeader) || req.body?.token;
 
     if (!token) {
         return res
             .status(400)
-            .send({ success: false, message: "Forbidden access" });
+            .send({ success: false, message: "Forbidden access: No token provided" });
     }
 
     // Verify the token
@@ -130,7 +145,6 @@ const formatPhoneNumber = (number) => {
 async function run() {
     try {
         const database = client.db("hardware_store");
-        console.log(database);
         const debtDB = client.db("debtMaintain");
         // *********************************************************************************************
         const borrowerCollections = debtDB.collection("borrowerList");
@@ -3125,16 +3139,19 @@ async function run() {
                         .json({ message: "Invalid ID format" });
                 }
 
+                const qty = Number(purchaseQuantity);
+                const price = Number(purchasePrice);
+
                 // Update the stock item with the given ID
                 const updatedStock = await stockCollections.findOneAndUpdate(
                     { _id: new ObjectId(id) }, // Wrap id with ObjectId
                     {
                         $set: {
-                            purchaseQuantity,
-                            purchasePrice,
+                            purchaseQuantity: isNaN(qty) ? 0 : qty,
+                            purchasePrice: isNaN(price) ? 0 : price,
                         },
                     },
-                    { new: true, returnDocument: "after" }, // Return the updated document in the response
+                    { returnDocument: "after" }, // Return the updated document in the response
                 );
 
                 if (!updatedStock) {
