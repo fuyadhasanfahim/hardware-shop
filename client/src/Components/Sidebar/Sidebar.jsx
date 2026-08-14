@@ -2,6 +2,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import logo from "../../assets/images/logo_white.png";
 
 import {
+  FcApproval,
   FcBearish,
   FcBriefcase,
   FcBullish,
@@ -15,6 +16,7 @@ import {
   FcPaid,
   FcPieChart,
   FcShop,
+  FcSurvey,
 } from "react-icons/fc";
 import StockPopUp from "../StockPopUp/StockPopUp";
 import useAxiosSecure from "../hooks/useAxiosSecure";
@@ -116,9 +118,9 @@ const Sidebar = () => {
     location.pathname.startsWith("/customerLedger");
 
   const getNavLinkClass = ({ isActive }) =>
-    `p-2 w-full flex items-center gap-2 mb-[1px] rounded-lg transition-colors ${
+    `p-2 w-full flex items-center gap-2 mb-[1px] transition-colors ${
       isActive
-        ? "bg-[#ff9800] text-white font-medium shadow"
+        ? "bg-[#ff9800] text-white font-medium"
         : "hover:bg-[#151515] hover:text-white"
     }`;
 
@@ -159,14 +161,30 @@ const Sidebar = () => {
           <NavLink
             to="/currentStock"
             className={({ isActive }) =>
-              `p-2 w-full flex items-center gap-2 mb-[1px] rounded-lg transition-colors ${
+              `p-2 w-full flex items-center gap-2 mb-[1px] transition-colors ${
                 isActive || isStockBalance
-                  ? "bg-[#ff9800] text-white font-medium shadow"
+                  ? "bg-[#ff9800] text-white font-medium"
                   : "hover:bg-[#151515] hover:text-white"
               }`
             }
           >
             <FcBriefcase className="text-xl" /> Stock Balance
+          </NavLink>
+        </div>
+        <div>
+          <NavLink
+            to="/recheckStock"
+            className={getNavLinkClass}
+          >
+            <FcSurvey className="text-xl" /> Recheck Stock
+          </NavLink>
+        </div>
+        <div>
+          <NavLink
+            to="/confirmedStock"
+            className={getNavLinkClass}
+          >
+            <FcApproval className="text-xl" /> Confirmed Stock
           </NavLink>
         </div>
         <div>

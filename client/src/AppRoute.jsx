@@ -9,6 +9,8 @@ import Supplier from "./Pages/Supplier";
 import Expense from "./Pages/Expense";
 import NewPurchase from "./Components/NewPurchase/NewPurchase";
 import CurrentStock from "./Components/currentStock/CurrentStock";
+import RecheckStock from "./Components/StockAudit/RecheckStock";
+import ConfirmedStock from "./Components/StockAudit/ConfirmedStock";
 import SupplierLedger from "./Components/SupplierLedger/SupplierLedger";
 import SingleSupplierLedger from "./Components/SingleSupplierLedger/SingleSupplierLedger";
 import NewSale from "./Components/NewSale/NewSale";
@@ -53,6 +55,8 @@ export const router = createBrowserRouter([
       { path: "/newQuotation", element: <NewQuotation /> },
       { path: "/currentStock", element: <CurrentStock /> },
       { path: "/stockBalance", element: <CurrentStock /> },
+      { path: "/recheckStock", element: <RecheckStock /> },
+      { path: "/confirmedStock", element: <ConfirmedStock /> },
       { path: "/supplierLedger", element: <SupplierLedger /> },
       { path: "/customerLedger", element: <CustomerLedger /> },
       { path: "/supplierLedger/id/:_id", element: <SingleSupplierLedger /> },

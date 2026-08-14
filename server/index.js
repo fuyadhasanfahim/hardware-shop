@@ -8,6 +8,7 @@ const fs = require("fs");
 const XLSX = require("xlsx");
 const { format } = require("date-fns");
 const { setupDailySummaryCron } = require("./utils/cronJobs");
+const createStockAuditRouter = require("./modules/stockAudit/stockAudit.routes");
 
 const app = express();
 
@@ -146,6 +147,9 @@ async function run() {
     try {
         const database = client.db("hardware_store");
         const debtDB = client.db("debtMaintain");
+
+        // Mount modular Stock Audit feature (Recheck & Confirmed Stock)
+        app.use(createStockAuditRouter(database));
         // *********************************************************************************************
         const borrowerCollections = debtDB.collection("borrowerList");
         const lenderCollections = debtDB.collection("lenderList");

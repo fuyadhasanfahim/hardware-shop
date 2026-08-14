@@ -297,7 +297,7 @@ const CurrentStock = () => {
                   <th className="w-[8%]">Brand</th>
                   <th className="w-[5%]">Purchase Price</th>
                   <th className="w-[6%]">Storage</th>
-                  <th className="w-[5%] text-center">Action</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -324,16 +324,14 @@ const CurrentStock = () => {
                         {parseFloat(stockItem.purchasePrice).toFixed(2)}
                       </td>
                       <td className="text-center">{stockItem.storage}</td>
-                      <td className="text-center">
-                        <div className="flex items-center justify-center text-xl">
+                      <td>
+                        <div className="flex items-center text-xl w-full gap-3">
                           <button
                             onClick={() =>
                               document
                                 .getElementById(`update_stock_${stockItem._id}`)
                                 .showModal()
                             }
-                            className="cursor-pointer hover:text-green-600 transition-colors"
-                            title="Edit Stock"
                           >
                             <MdOutlineEdit />
                           </button>
