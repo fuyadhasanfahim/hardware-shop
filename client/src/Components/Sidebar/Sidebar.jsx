@@ -3,6 +3,7 @@ import logo from "../../assets/images/logo_white.png";
 
 import {
   FcBearish,
+  FcBriefcase,
   FcBullish,
   FcBusinessman,
   FcCurrencyExchange,
@@ -107,10 +108,19 @@ const Sidebar = () => {
   };
 
   const location = useLocation();
-  // Check if the current URL path is "/customer"
-  const isCustomer = location.pathname === "/customer";
-  const isProduct = location.pathname === "/product";
-  const isSupplier = location.pathname === "/supplier";
+  const isStockBalance =
+    location.pathname === "/currentStock" ||
+    location.pathname === "/stockBalance";
+  const isLedgerActive =
+    location.pathname.startsWith("/supplierLedger") ||
+    location.pathname.startsWith("/customerLedger");
+
+  const getNavLinkClass = ({ isActive }) =>
+    `p-2 w-full flex items-center gap-2 mb-[1px] rounded-lg transition-colors ${
+      isActive
+        ? "bg-[#ff9800] text-white font-medium shadow"
+        : "hover:bg-[#151515] hover:text-white"
+    }`;
 
   return (
     <div>
@@ -122,7 +132,8 @@ const Sidebar = () => {
         <div>
           <NavLink
             to="/"
-            className="p-2 w-full hover:text-white flex items-center gap-2 hover:bg-[#151515] mb-[1px]"
+            end
+            className={getNavLinkClass}
           >
             <FcShop className="text-xl" /> Dashboard
           </NavLink>
@@ -131,7 +142,7 @@ const Sidebar = () => {
         <div>
           <NavLink
             to="/sales"
-            className="p-2 w-full hover:text-white flex items-center gap-2 hover:bg-[#151515] mb-[1px]"
+            className={getNavLinkClass}
           >
             <FcBullish className="text-xl" /> Sales
           </NavLink>
@@ -139,78 +150,81 @@ const Sidebar = () => {
         <div>
           <NavLink
             to="/purchase"
-            className="p-2 w-full hover:text-white flex items-center gap-2 hover:bg-[#151515] mb-[1px]"
+            className={getNavLinkClass}
           >
             <FcLowPriority className="text-xl" /> Purchase
           </NavLink>
         </div>
         <div>
           <NavLink
+            to="/currentStock"
+            className={({ isActive }) =>
+              `p-2 w-full flex items-center gap-2 mb-[1px] rounded-lg transition-colors ${
+                isActive || isStockBalance
+                  ? "bg-[#ff9800] text-white font-medium shadow"
+                  : "hover:bg-[#151515] hover:text-white"
+              }`
+            }
+          >
+            <FcBriefcase className="text-xl" /> Stock Balance
+          </NavLink>
+        </div>
+        <div>
+          <NavLink
             to="/quotation"
-            className="p-2 w-full hover:text-white flex items-center gap-2 hover:bg-[#151515] mb-[1px]"
+            className={getNavLinkClass}
           >
             <FcDocument className="text-xl" /> Quotation
           </NavLink>
         </div>
         <div>
-          <a
-            href="/customer"
-            className={`p-2 w-full flex items-center gap-2 mb-[1px] 
-              ${
-                isCustomer
-                  ? "bg-[#151515] text-white"
-                  : "hover:bg-[#151515] hover:text-white"
-              }`}
+          <NavLink
+            to="/customer"
+            className={getNavLinkClass}
           >
             <FcBusinessman className="text-xl" /> Customer
-          </a>
+          </NavLink>
         </div>
 
         <div>
-          <a
-            href="/product"
-            className={`p-2 w-full flex items-center gap-2 mb-[1px] 
-              ${
-                isProduct
-                  ? "bg-[#151515] text-white"
-                  : "hover:bg-[#151515] hover:text-white"
-              }`}
+          <NavLink
+            to="/product"
+            className={getNavLinkClass}
           >
             <FcPaid className="text-xl" /> Product
-          </a>
+          </NavLink>
         </div>
 
         <div>
-          <a
-            href="/supplier"
-            className={`p-2 w-full flex items-center gap-2 mb-[1px] 
-              ${
-                isSupplier
-                  ? "bg-[#151515] text-white"
-                  : "hover:bg-[#151515] hover:text-white"
-              }`}
+          <NavLink
+            to="/supplier"
+            className={getNavLinkClass}
           >
             <FcInTransit className="text-xl" />
             Supplier{" "}
-          </a>
+          </NavLink>
         </div>
 
         <div className="collapse hover:bg-gray-600 mt-1 collapse-arrow hover:-z-0">
-          <input type="checkbox" />
-          <div className="collapse-title flex items-center gap-2 px-2">
+          <input type="checkbox" defaultChecked={isLedgerActive} />
+          <div
+            className={`collapse-title flex items-center gap-2 px-2 ${
+              isLedgerActive ? "text-white font-medium" : ""
+            }`}
+          >
             <FcList className="text-xl" /> Ledger
           </div>
           <div className="collapse-content">
             <NavLink
               to="/supplierLedger"
-              className="p-2 w-full hover:text-white flex items-center gap-2 hover:bg-[#151515] mb-[1px] rounded-md"
+              className={getNavLinkClass}
             >
               Supplier
             </NavLink>
 
             <NavLink
               to="/customerLedger"
-              className="p-2 w-full hover:text-white flex items-center gap-2 hover:bg-[#151515] mb-[1px] rounded-md"
+              className={getNavLinkClass}
             >
               Customer
             </NavLink>
@@ -220,7 +234,7 @@ const Sidebar = () => {
         <div>
           <NavLink
             to="/balance"
-            className="p-2 w-full hover:text-white flex items-center gap-2 hover:bg-[#151515] mb-[1px]"
+            className={getNavLinkClass}
           >
             <FcCurrencyExchange className="text-xl" />
             Balance{" "}
@@ -312,13 +326,9 @@ const Sidebar = () => {
         </div>
 
         <div>
-          <StockPopUp />
-        </div>
-
-        <div>
           <NavLink
             to="/return"
-            className="p-2 w-full hover:text-white flex items-center gap-2 hover:bg-[#151515] mb-[1px]"
+            className={getNavLinkClass}
           >
             <FcLeft className="text-xl" />
             Return{" "}

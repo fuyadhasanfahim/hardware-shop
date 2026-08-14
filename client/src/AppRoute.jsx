@@ -52,6 +52,7 @@ export const router = createBrowserRouter([
       { path: "/newSales", element: <NewSale /> },
       { path: "/newQuotation", element: <NewQuotation /> },
       { path: "/currentStock", element: <CurrentStock /> },
+      { path: "/stockBalance", element: <CurrentStock /> },
       { path: "/supplierLedger", element: <SupplierLedger /> },
       { path: "/customerLedger", element: <CustomerLedger /> },
       { path: "/supplierLedger/id/:_id", element: <SingleSupplierLedger /> },
